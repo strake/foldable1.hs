@@ -8,9 +8,9 @@ import Data.Functor.Identity
 import Data.Functor.Product
 import Data.Functor.Reverse
 import Data.Functor.Sum
-import Data.List.NonEmpty (NonEmpty (..), head, last, scanl1, scanr1, uncons)
+import Data.List.NonEmpty (NonEmpty (..), uncons)
 import qualified Data.List.NonEmpty as NE
-import Data.Semigroup (Semigroup (..), Dual (..), Max (..), Min (..))
+import Data.Semigroup (Semigroup (..), Dual (..), Max (..), Min (..), First (..), Last (..))
 import Util ((&))
 
 class Foldable f => Foldable1 f where
@@ -23,8 +23,8 @@ class Foldable f => Foldable1 f where
     foldMap1 f = sconcat . fmap f . toNonEmpty
 
     foldr1, foldl1, foldr1', foldl1' :: (a -> a -> a) -> f a -> a
-    foldr1 f = head . scanr1 f . toNonEmpty
-    foldl1 f = last . scanl1 f . toNonEmpty
+    foldr1 f = NE.head . NE.scanr1 f . toNonEmpty
+    foldl1 f = NE.last . NE.scanl1 f . toNonEmpty
     foldl1' f = toNonEmpty & \ (a:|as) -> foldl' f a as
     foldr1' f = toNonEmpty & go
       where go = uncons & \ case (a, Nothing) -> a
@@ -44,6 +44,10 @@ class Foldable f => Foldable1 f where
     maximum, minimum :: Ord a => f a -> a
     maximum = getMax . foldMap1 Max
     minimum = getMin . foldMap1 Min
+
+    head, last :: f a -> a
+    head = getFirst . foldMap1 First
+    last = getLast . foldMap1 Last
 
 intercalate :: (Foldable1 f, Semigroup a) => a -> f a -> a
 intercalate a = sconcat . NE.intersperse a . toNonEmpty
