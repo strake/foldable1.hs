@@ -45,8 +45,12 @@ class Foldable f => Foldable1 f where
     maximum = getMax . foldMap1 Max
     minimum = getMin . foldMap1 Min
 
+intercalate1 :: (Foldable1 f, Semigroup a) => a -> f a -> a
+intercalate1 a = sconcat . NE.intersperse a . toNonEmpty
+
 intercalate :: (Foldable1 f, Semigroup a) => a -> f a -> a
-intercalate a = sconcat . NE.intersperse a . toNonEmpty
+intercalate = intercalate1
+{-# DEPRECATED intercalate "Rather use `intercalate1`" #-}
 
 foldrM1, foldlM1 :: (Foldable1 f, Monad m) => (a -> a -> m a) -> f a -> m a
 foldrM1 f = go . toNonEmpty
