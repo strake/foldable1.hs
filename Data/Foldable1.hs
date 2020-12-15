@@ -1,4 +1,4 @@
-module Data.Foldable1 where
+module Data.Foldable1 (Foldable1 (..), intercalate, foldrM1, foldlM1) where
 
 import Prelude hiding (head, tail, init, last, scanl1, scanr1)
 import Control.Applicative.Backwards
