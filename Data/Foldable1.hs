@@ -1,6 +1,6 @@
 module Data.Foldable1 (Foldable1 (..), intercalate, foldrM1, foldlM1) where
 
-import Prelude hiding (head, tail, init, last, scanl1, scanr1)
+import Prelude hiding (head, tail, init, last, scanl1, scanr1, foldl1, foldr1)
 import Control.Applicative.Backwards
 import Data.Foldable (foldl', foldlM)
 import Data.Functor.Compose
@@ -32,6 +32,14 @@ class Foldable f => Foldable1 f where
 
     toNonEmpty :: f a -> NonEmpty a
     toNonEmpty = foldMap1 pure
+
+    maximumBy, minimumBy :: (a -> a -> Ordering) -> f a -> a
+    maximumBy cmp = foldr1 max'
+      where
+        max' a b | GT <- cmp a b = a | otherwise = b
+    minimumBy cmp = foldr1 min'
+      where
+        min' a b | LT <- cmp a b = b | otherwise = a
 
     maximum, minimum :: Ord a => f a -> a
     maximum = getMax . foldMap1 Max
