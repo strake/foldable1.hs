@@ -8,7 +8,7 @@ import Data.Functor.Identity
 import Data.Functor.Product
 import Data.Functor.Reverse
 import Data.Functor.Sum
-import Data.List.NonEmpty (NonEmpty (..), head, last, scanl1, scanr1, uncons)
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Semigroup (Semigroup (..), Dual (..), Max (..), Min (..))
 import Util ((&))
@@ -23,12 +23,10 @@ class Foldable f => Foldable1 f where
     foldMap1 f = sconcat . fmap f . toNonEmpty
 
     foldr1, foldl1, foldr1', foldl1' :: (a -> a -> a) -> f a -> a
-    foldr1 f = head . scanr1 f . toNonEmpty
-    foldl1 f = last . scanl1 f . toNonEmpty
-    foldl1' f = toNonEmpty & \ (a:|as) -> foldl' f a as
-    foldr1' f = toNonEmpty & go
-      where go = uncons & \ case (a, Nothing) -> a
-                                 (a, Just as) -> a `f` go as
+    foldr1 f = foldr1 f . toNonEmpty
+    foldl1 f = foldl1 f . toNonEmpty
+    foldl1' f = foldl1' f . toNonEmpty
+    foldr1' f = foldl1' (flip f) . Reverse
 
     toNonEmpty :: f a -> NonEmpty a
     toNonEmpty = foldMap1 pure
@@ -63,6 +61,12 @@ instance Foldable1 Identity where
 
 instance Foldable1 NonEmpty where
     toNonEmpty = id
+    foldr1 f = go <$> NE.tail <*> NE.head where
+        go = \ case
+            [] -> id
+            a:as -> f `flip` go as a
+    foldl1 f (a:|as) = foldl f a as
+    foldl1' f (a:|as) = foldl' f a as
 
 instance Foldable1 ((,) a) where
     foldMap1 f = f . snd
