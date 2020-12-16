@@ -1,6 +1,6 @@
 module Data.Foldable1 (Foldable1 (..), intercalate, foldrM1, foldlM1) where
 
-import Prelude hiding (head, tail, init, last, scanl1, scanr1, foldl1, foldr1)
+import Prelude hiding (head, tail, init, last, scanl1, scanr1, foldl1, foldr1, maximum, minimum)
 import Control.Applicative.Backwards
 import Data.Foldable (foldl', foldlM)
 import Data.Functor.Compose
@@ -85,8 +85,23 @@ instance (Foldable1 f, Foldable1 g) => Foldable1 (Product f g) where
     foldMap1 f (Pair as bs) = foldMap1 f as <> foldMap1 f bs
 
 instance (Foldable1 f, Foldable1 g) => Foldable1 (Sum f g) where
-    foldMap1 f (InL as) = foldMap1 f as
-    foldMap1 f (InR bs) = foldMap1 f bs
+    fold1 = sumElim fold1 fold1
+    foldMap1 f = sumElim (foldMap1 f) (foldMap1 f)
+    foldr1 f = sumElim (foldr1 f) (foldr1 f)
+    foldl1 f = sumElim (foldl1 f) (foldl1 f)
+    foldr1' f = sumElim (foldr1' f) (foldr1' f)
+    foldl1' f = sumElim (foldl1' f) (foldl1' f)
+    toNonEmpty = sumElim toNonEmpty toNonEmpty
+    maximumBy f = sumElim (maximumBy f) (maximumBy f)
+    minimumBy f = sumElim (minimumBy f) (minimumBy f)
+    maximum = sumElim maximum maximum
+    minimum = sumElim minimum minimum
+
+sumElim :: (f a -> b) -> (g a -> b) -> Sum f g a -> b
+sumElim f g = \ case
+    InL as -> f as
+    InR bs -> g bs
+{-# INLINE sumElim #-}
 
 newtype NonEmptyDList a = NEDL { unNEDL :: [a] -> NonEmpty a }
 
