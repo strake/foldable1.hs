@@ -19,8 +19,9 @@ class Foldable f => Foldable1 f where
     fold1 :: Semigroup a => f a -> a
     fold1 = foldMap1 id
 
-    foldMap1 :: Semigroup b => (a -> b) -> f a -> b
+    foldMap1, foldMap1' :: Semigroup b => (a -> b) -> f a -> b
     foldMap1 f = sconcat . fmap f . toNonEmpty
+    foldMap1' f = foldMap1' f . toNonEmpty
 
     foldr1, foldl1, foldr1', foldl1' :: (a -> a -> a) -> f a -> a
     foldr1 f = foldr1 f . toNonEmpty
@@ -61,6 +62,7 @@ instance Foldable1 Identity where
 
 instance Foldable1 NonEmpty where
     toNonEmpty = id
+    foldMap1' f (a:|as) = foldl' ((. f) . (<>)) (f a) as
     foldr1 f = go <$> NE.tail <*> NE.head where
         go = \ case
             [] -> id
