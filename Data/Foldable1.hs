@@ -10,7 +10,7 @@ import Data.Functor.Reverse
 import Data.Functor.Sum
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Semigroup (Semigroup (..), Dual (..), Max (..), Min (..))
+import Data.Semigroup (Semigroup (..), Dual (..), Max (..), Min (..), First (..), Last (..))
 import Util ((&))
 
 class Foldable f => Foldable1 f where
@@ -44,6 +44,10 @@ class Foldable f => Foldable1 f where
     maximum = getMax . foldMap1 Max
     minimum = getMin . foldMap1 Min
 
+    head, last :: f a -> a
+    head = getFirst . foldMap1 First
+    last = getLast . foldMap1 Last
+
 intercalate1 :: (Foldable1 f, Semigroup a) => a -> f a -> a
 intercalate1 a = sconcat . NE.intersperse a . toNonEmpty
 
@@ -69,9 +73,12 @@ instance Foldable1 NonEmpty where
             a:as -> f `flip` go as a
     foldl1 f (a:|as) = foldl f a as
     foldl1' f (a:|as) = foldl' f a as
+    head (a:|_) = a
 
 instance Foldable1 ((,) a) where
     foldMap1 f = f . snd
+    head = snd
+    last = snd
 
 deriving instance (Foldable1 f) => Foldable1 (Backwards f)
 
@@ -83,6 +90,8 @@ instance (Foldable1 f, Foldable1 g) => Foldable1 (Compose f g) where
 
 instance (Foldable1 f, Foldable1 g) => Foldable1 (Product f g) where
     foldMap1 f (Pair as bs) = foldMap1 f as <> foldMap1 f bs
+    head (Pair as _) = head as
+    last (Pair _ bs) = last bs
 
 instance (Foldable1 f, Foldable1 g) => Foldable1 (Sum f g) where
     fold1 = sumElim fold1 fold1
@@ -96,6 +105,8 @@ instance (Foldable1 f, Foldable1 g) => Foldable1 (Sum f g) where
     minimumBy f = sumElim (minimumBy f) (minimumBy f)
     maximum = sumElim maximum maximum
     minimum = sumElim minimum minimum
+    head = sumElim head head
+    last = sumElim last last
 
 sumElim :: (f a -> b) -> (g a -> b) -> Sum f g a -> b
 sumElim f g = \ case
