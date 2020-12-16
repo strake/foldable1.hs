@@ -29,7 +29,7 @@ class Foldable f => Foldable1 f where
     foldr1' f = foldl1' (flip f) . Reverse
 
     toNonEmpty :: f a -> NonEmpty a
-    toNonEmpty = foldMap1 pure
+    toNonEmpty = runNonEmptyDList . foldMap1 singleton
 
     maximumBy, minimumBy :: (a -> a -> Ordering) -> f a -> a
     maximumBy cmp = foldr1 max'
@@ -85,3 +85,17 @@ instance (Foldable1 f, Foldable1 g) => Foldable1 (Product f g) where
 instance (Foldable1 f, Foldable1 g) => Foldable1 (Sum f g) where
     foldMap1 f (InL as) = foldMap1 f as
     foldMap1 f (InR bs) = foldMap1 f bs
+
+newtype NonEmptyDList a = NEDL { unNEDL :: [a] -> NonEmpty a }
+
+instance Semigroup (NonEmptyDList a) where
+    NEDL f <> NEDL g = NEDL (f . NE.toList . g)
+    {-# INLINE (<>) #-}
+
+singleton :: a -> NonEmptyDList a
+singleton = NEDL . (:|)
+{-# INLINE singleton #-}
+
+runNonEmptyDList :: NonEmptyDList a -> NonEmpty a
+runNonEmptyDList = ($ []) . unNEDL
+{-# INLINE runNonEmptyDList #-}
